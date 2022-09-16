@@ -108,9 +108,9 @@ int main(void)
 	char cityName[BUF_SIZE];
 	char curl_Cmd[BUF_SIZE];
 	char buf[BUF_SIZE];
-
 	char *buffer;
-	int bufferSize;
+	int size;
+	int count;
 
 	memset(cityName,0,sizeof(cityName));
 	memset(curl_Cmd,0,sizeof(curl_Cmd));
@@ -135,43 +135,56 @@ int main(void)
 	pclose(fp);
 	fclose(file);
 
-	json_object * pJsonObject = json_object_from_file("/home/jwoh/http_Project/CLI_OpenAPI_Weather_Project/src/result.json");
-	if (pJsonObject == NULL)
-	{
-		perror("json_object_from_file error\n");
-		return -1;
-	}
+	printf("check 44\n");
 
-	json_object * jobj = json_tokener_parse(string);
+	FILE *rfp;
+	rfp = fopen("/home/jwoh/http_Project/CLI_OpenAPI_Weather_Project/src/result.json","r");
+	fseek(rfp, 0, SEEK_END);    // 파일 포인터를 파일의 끝으로 이동시킴
+    	size = ftell(rfp);          // 파일 포인터의 현재 위치를 얻음
+
+    	buffer = malloc(size + 1);    // 파일 크기 + 1바이트(문자열 마지막의 NULL)만큼 동적 메모리 할당
+   	memset(buffer, 0, size + 1);  // 파일 크기 + 1바이트만큼 메모리를 0으로 초기화
+	fseek(rfp, 0, SEEK_SET);                // 파일 포인터를 파일의 처음으로 이동시킴
+	count = fread(buffer, size, 1, rfp);    // hello.txt에서 파일 크기만큼 값을 읽음	
+	json_object *jobj = json_tokener_parse(buffer);
+	fclose(rfp);
+	free(buffer);
 
 	//parseJsonObject1(pJsonObject);
 	//parseJsonObject2(pJsonObject);
 	//parseJsonObject3(pJsonObject);
 	//parseJsonArray1(pJsonObject);
 
-	json_object_object_foreach(pJsonObject,key,val)
+	json_object_object_foreach(jobj,key,val)
 	{
 		type = json_object_get_type(val);
-		switch (type) 
-		{
-			case json_type_null: printf("json_type_nulln");
+		 switch (type)
+			{
+			case json_type_null:
+				printf("json_type_null\n");
 				break;
-			case json_type_boolean: printf("json_type_booleann");
+			case json_type_boolean:
+				printf("json_type_boolean\n");
 				break;
-			case json_type_double: printf("json_type_doublen");
+			case json_type_double:
+				printf("json_type_double\n");
 				break;
-			case json_type_int: printf("json_type_intn");
+			case json_type_int:
+				printf("json_type_int\n");
 				break;
-			case json_type_object: printf("json_type_objectn");
+			case json_type_object:
+				printf("json_type_object\n");
 				break;
-			case json_type_array: printf("json_type_arrayn");
+			case json_type_array:
+				printf("json_type_array\n");
 	 			break;
-	 		case json_type_string: printf("json_type_stringn"); 
+	 		case json_type_string:
+				printf("json_type_string\n");
 				break;
-		}
+			}
 	}
-	json_object_put(pJsonObject);
-	pJsonObject = NULL;
+	json_object_put(jobj);
+	jobj = NULL;
 	return 0;
 }
 
