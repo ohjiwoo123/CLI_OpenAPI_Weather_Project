@@ -95,4 +95,23 @@ https://openweathermap.org/current
 - `>` : 명령어 실행 결과 저장하기  
 ```ls > result.txt```
 
-## 현재 상황
+## XML, JSON 차이 
+- XML(eXtensible Markup Language) : 확장 마크업 언어  
+<> 로 묶어쓴다. 
+- JSON (JavaScript Object Notation) : 속성-값 쌍(attribute–value pairs), 배열 자료형  
+- 공통점
+  - 1. 둘 다 데이터를 저장 및 전달을 위해 만들어짐  
+  - 2. 기계와 사람이 쉽게 읽을 수 있다
+  - 3. 계층적인 데이터 구조를 가지고 있다
+  - 4. 다양한 프로그래밍 언어에 의해 파싱 될 수 있다
+  - 5. XMLHttpRequest 객체를 이용해서 서버로부터 데이터를 전송 받을 수 있다
+- 차이점 
+  - 1. JSON은 종료 태그를 사용하지 않는다
+  - 2. JSON 구문이 XML 구문보다 짧다
+  - 3. JSON 데이터가 XML 보다 빨리 읽고 쓸 수 있다
+  - 4. XML은 배열을 사용할 수 없지만, JSON은 가능하다
+  - 5. XML은 XML 파서로 파싱되며, JSON은 자바스크립트 표준 함수인 eval() 함수로 파싱된다
+- 결론
+  - XML은 XML DOM(Document Object Model)을 이용하여 해당 문서에 접근하고, JSON은 바로 파싱하므로 XML보다 빠르다  
+  하지만 JSON은 전송받은 데이터의 무결성을 사용자가 직접 검증해야한다. 
+  따라서 데이터의 검증이 필요한 곳에서는 스키마를 사용하여 데이터의 무결성을 검증할 수 있는 XML이 사용된다
