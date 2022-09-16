@@ -31,6 +31,28 @@ HTTP, FTP 등 다양한 통신 프로토콜을 지원하며 SSL 인증 방식 �
 - 서버에 Request 한 후, Response에서 Header 정보를 제외한 json 값만 찾는다  
 ```curl -H "Accept: application/json" --request GET 'https://api.openweathermap.org/data/2.5/weather?q={CITY_NAME}&appid={SECRET_KEY}'```  
 
+- curl 옵션 정리 (curl --help 를 사용하시오)
+  - 1. -d --data : POST request로 특정 데이터를 보낼 때 사용한다  
+  - 2. -H --header : request에 함께 제공되는 Headers 정보를 포함한다  
+  - 3. -X --request : POST,GET,PUT,DELETE 등 request method를 사용하기 위함  
+  - 4. -l : 헤더만 가져오기  
+  - 5. -i : 헤더와 바디까지 가져오기  
+  - 6. -F : 파일 업로드  
+  - 7. -u : 인증  
+  - 8. -L : Redirect  
+  - 9. -U : 프록시 인증  
+  - 10. -u : Authentication  
+  - 11. -e : Referer 지정  
+  - 12. -b : Cookies  
+  - 13. -A : User Agent 지정  
+  - 14. -t : telnet 등 
+  - 15. -o : output 파일명 저장 
+  - 16. jq : json 처리 
+- debug  
+  ```
+  curl --trace-ascii debug.dump http://google.com
+  ```
+
 ## json-c lib 사용법 
 - 설치방법  
   - `sudo apt-get install libjson-c-dev`  
