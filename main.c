@@ -6,10 +6,9 @@
 #include <json-c/json.h>
 
 #define BUF_SIZE 1024
-#define SECRET_KEY "89c7e8b990973c2078cdf69c21117339"
 #define CURL_URL "curl -s -H 'Accept: application/json' --request GET"
 #define API_URL "https://api.openweathermap.org/data/2.5/weather?q="
-#define API_URL_BACK "&appid=89c7e8b990973c2078cdf69c21117339"
+#define API_URL_BACK "&appid=89c7e8b990973c2078cdf69c21117339&units=metric"
 
 pthread_mutex_t mutx;
 int printUi();
@@ -22,18 +21,22 @@ void error_Handling(char *buf);
 
 int main(int argc, char *argv[])
 {
-	pthread_t threadId;
 	pthread_t printUiThread;
-
+	int threadCheck;
+	int status;
 	pthread_mutex_init(&mutx, NULL);
 
 	while(1)
 	{
-		if(pthread_create(&printUiThread,NULL,threadPrintUi,NULL) !=0 )
+		threadCheck = pthread_create(&printUiThread,NULL,threadPrintUi,NULL);
+		if(threadCheck != 0)
 		{
-			error_Handling("PrintUIThread create error\n");
+			printf("%d\n",threadCheck);
+			error_Handling("Print UI Thread create error\n");
 			continue;
 		}
+		pthread_join(printUiThread, (void**)&status);
+		printf("Thread End : %d\n",status);
 	}
 	return 0;
 }
@@ -97,10 +100,13 @@ void getCommandList()
 	switch(inputNumber)
 	{	case 1:
 			callWeatherByLat();
-		case 2: 
+			break;
+		case 2:
 			callWeatherByCity();
+			break;
 		default:
 			printf("위에 제공된 번호 중에서 입력하세요\n");
+			break;
 	}
 }
 
@@ -116,15 +122,18 @@ void callWeatherByLat()
 
 void callWeatherByCity()
 {
+	json_object *myJsonObj, *weatherKeyObj, *mainKeyObj;
+    	json_object *dataObj, *dataValObj;
+
 	char cityName[20];
 	char curlCommand[BUF_SIZE];
 	char buf[BUF_SIZE];
-
+	char *readBuffer;
 	printf("===================================================\n");
 	printf("도시 이름을 입력하세요 (도시명을 잘못 입력할 시 결과출력X)\n");
 	scanf("%s",cityName);
 	sprintf(curlCommand,"%s '%s%s%s'",CURL_URL,API_URL,cityName,API_URL_BACK);
-        printf("%s\n",curlCommand);
+        //printf("%s\n",curlCommand);
 
 	FILE *fp;
         FILE *file;
@@ -133,12 +142,39 @@ void callWeatherByCity()
 
         while(fgets(buf,BUF_SIZE,fp))
         {
-                printf("check 33\n");
-                printf("%s",buf);
+                //printf("%s\n",buf);
                 fputs(buf,file);
         }
         pclose(fp);
         fclose(file);
+
+	FILE *rfp;
+	rfp = fopen("/home/jwoh/http_Project/CLI_OpenAPI_Weather_Project/src/result.json","r");
+	
+	readBuffer = malloc(1024);
+	fread(readBuffer,1024,1,rfp);
+
+	myJsonObj = json_tokener_parse(readBuffer);
+
+	weatherKeyObj = json_object_object_get(myJsonObj, "weather");
+	mainKeyObj = json_object_object_get(myJsonObj, "main");
+
+	// 웨더 영역 파싱 
+	dataObj = json_object_array_get_idx(weatherKeyObj,0);
+	//printf("%s\n",json_object_get_string(dataObj));
+	dataValObj = json_object_object_get(dataObj, "description");
+	printf("현재 날씨는 : %s\n", json_object_get_string(dataValObj));
+
+
+	// 메인 영역 파싱 
+	dataValObj = json_object_object_get(mainKeyObj, "temp");
+	printf("현재기온은 : %s\n", json_object_get_string(dataValObj));
+
+
+	//dataObj = json_object_object_get(dataobj, "nameInfo");
+
+	fclose(rfp);
+	free(readBuffer);
 }
 
 void error_Handling(char *buf)
