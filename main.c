@@ -7,14 +7,15 @@
 
 #define BUF_SIZE 1024
 #define CURL_URL "curl -s -H 'Accept: application/json' --request GET"
-#define API_URL "https://api.openweathermap.org/data/2.5/weather?q="
+#define API_CITY_URL "https://api.openweathermap.org/data/2.5/weather?q="
+#define API_LOC_URL "https://api.openweathermap.org/data/2.5/weather?"
 #define API_URL_BACK "&appid=89c7e8b990973c2078cdf69c21117339&units=metric"
 
 pthread_mutex_t mutx;
 int printUi();
 void *threadPrintUi(void *arg);
 void disConnect();
-void callWeatherByLat();
+void callWeatherByLoc();
 void callWeatherByCity();
 void getCommandList();
 void error_Handling(char *buf);
@@ -44,7 +45,6 @@ int main(int argc, char *argv[])
 int printUi()
 {
 	int inputNum = 0;
-	// system("cls");
 	printf("===================================================\n");
 	printf("날씨 확인 프로그램입니다.\n");
 	printf("---------------------------------------------------\n");
@@ -53,7 +53,6 @@ int printUi()
 
 	// 사용자가 선택한 메뉴의 값을 반환한다.
 	scanf("%d", &inputNum);
-	//getchar();
 	//버퍼에 남은 엔터 제거용
 	while (getchar() != '\n'); //scanf_s 버퍼 비우기, 밀림 막음
 	if (inputNum > 2 || inputNum < 1)
@@ -99,7 +98,7 @@ void getCommandList()
 
 	switch(inputNumber)
 	{	case 1:
-			callWeatherByLat();
+			callWeatherByLoc();
 			break;
 		case 2:
 			callWeatherByCity();
@@ -112,18 +111,72 @@ void getCommandList()
 
 void disConnect()
 {
-
+	printf("프로그램을 종료합니다.\n");
+	exit(0);
 }
 
-void callWeatherByLat()
+void callWeatherByLoc()
 {
+	json_object *myJsonObj, *weatherKeyObj, *mainKeyObj;
+        json_object *dataObj, *dataValObj;
+
+        int latitude;
+        int longtitude;
+
+	char latURL[20];
+	char longURL[20];
+
+        char curlCommand[BUF_SIZE];
+        char buf[BUF_SIZE];
+        char *readBuffer;
+
+        printf("===================================================\n");
+        printf("위도를 입력하세요\n");
+        scanf("%d",&latitude);
+	printf("경도를 입력하세요\n");
+        scanf("%d",&longtitude);
+
+	sprintf(latURL,"lat=%d",latitude);
+	sprintf(longURL,"lon=%d",longtitude);
+
+	printf("check %s %s\n",latURL,longURL);
+
+        sprintf(curlCommand,"%s '%s%s%s%s%s'",CURL_URL,API_LOC_URL,latURL,"&",longURL,API_URL_BACK);
+	printf("%s\n",curlCommand);
+
+	FILE *fp;
+        FILE *file;
+        fp = popen(curlCommand,"r");
+        if (fp == NULL)
+        {
+                perror("FILE *fp가 NULL 입니다.\n");
+                return;
+        }
+
+        file = fopen("/home/jwoh/http_Project/CLI_OpenAPI_Weather_Project/src/result.json","w");
+        if (file == NULL)
+        {
+                perror("FILE *file이 NULL입니다.\n");
+                return;
+        }
+        while(fgets(buf,BUF_SIZE,fp))
+        {
+                printf("%s\n",buf);
+                fputs(buf,file);
+        }
+        pclose(fp);
+        fclose(file);
 
 }
-
 void callWeatherByCity()
 {
 	json_object *myJsonObj, *weatherKeyObj, *mainKeyObj;
     	json_object *dataObj, *dataValObj;
+
+	long size = 0;
+	long ftellResult = 0;
+	int fseekResult = 0;
+	size_t freadResult = 0;
 
 	char cityName[20];
 	char curlCommand[BUF_SIZE];
@@ -132,14 +185,23 @@ void callWeatherByCity()
 	printf("===================================================\n");
 	printf("도시 이름을 입력하세요 (도시명을 잘못 입력할 시 결과출력X)\n");
 	scanf("%s",cityName);
-	sprintf(curlCommand,"%s '%s%s%s'",CURL_URL,API_URL,cityName,API_URL_BACK);
-        //printf("%s\n",curlCommand);
+	sprintf(curlCommand,"%s '%s%s%s'",CURL_URL,API_CITY_URL,cityName,API_URL_BACK);
 
 	FILE *fp;
         FILE *file;
         fp = popen(curlCommand,"r");
-        file = fopen("/home/jwoh/http_Project/CLI_OpenAPI_Weather_Project/src/result.json","w");
+	if (fp == NULL)
+	{
+		perror("FILE *fp가 NULL 입니다.\n");
+		return;
+	}
 
+        file = fopen("/home/jwoh/http_Project/CLI_OpenAPI_Weather_Project/src/result.json","w");
+	if (file == NULL)
+	{
+		perror("FILE *file이 NULL입니다.\n");
+		return;
+	}
         while(fgets(buf,BUF_SIZE,fp))
         {
                 //printf("%s\n",buf);
@@ -150,28 +212,60 @@ void callWeatherByCity()
 
 	FILE *rfp;
 	rfp = fopen("/home/jwoh/http_Project/CLI_OpenAPI_Weather_Project/src/result.json","r");
-	
-	readBuffer = malloc(1024);
-	fread(readBuffer,1024,1,rfp);
+	if (rfp == NULL)
+	{
+		perror("FILE *rfp가 NULL입니다.\n");
+		return;
+	}
 
+	fseekResult = fseek(rfp,0,SEEK_END);
+	// fseek 함수, 성공 시 파일 위치 반환, 실패시 -1 반환 
+	if (fseekResult == -1)
+	{
+		perror("파일 위치 읽기를 실패하였습니다.\n");
+		return;
+	}
+
+	size = ftell(rfp);
+	printf("size: %ld\n",size);
+
+	readBuffer = malloc(size+1);
+	memset(readBuffer,0, size+1);
+
+	fseekResult = fseek(rfp,0,SEEK_SET);
+	if (fseekResult == -1)
+        {
+                perror("파일 위치 읽기를 실패하였습니다.\n");
+                return;
+        }
+
+	freadResult = fread(readBuffer,1,size+1,rfp);
+
+	if (freadResult != size)
+	{
+		printf("freadResult : %ld\n",freadResult);
+		perror("파일을 읽지 못했습니다.\n");
+		return;
+	}
 	myJsonObj = json_tokener_parse(readBuffer);
+	printf("받아온 json data :\n %s\n", json_object_get_string(myJsonObj));
 
 	weatherKeyObj = json_object_object_get(myJsonObj, "weather");
+	printf("1차로 파싱한 weather data :\n %s\n", json_object_get_string(weatherKeyObj));
+
 	mainKeyObj = json_object_object_get(myJsonObj, "main");
+	printf("1차로 파싱한 main data :\n %s\n", json_object_get_string(mainKeyObj));
 
 	// 웨더 영역 파싱 
 	dataObj = json_object_array_get_idx(weatherKeyObj,0);
-	//printf("%s\n",json_object_get_string(dataObj));
-	dataValObj = json_object_object_get(dataObj, "description");
-	printf("현재 날씨는 : %s\n", json_object_get_string(dataValObj));
+	printf("웨더 영역의 array 객체 :\n %s\n",json_object_get_string(dataObj));
 
+	dataValObj = json_object_object_get(dataObj, "description");
+	printf("현재 날씨는 :\n %s\n", json_object_get_string(dataValObj));
 
 	// 메인 영역 파싱 
 	dataValObj = json_object_object_get(mainKeyObj, "temp");
-	printf("현재기온은 : %s\n", json_object_get_string(dataValObj));
-
-
-	//dataObj = json_object_object_get(dataobj, "nameInfo");
+	printf("현재기온은 :\n %s\n", json_object_get_string(dataValObj));
 
 	fclose(rfp);
 	free(readBuffer);
