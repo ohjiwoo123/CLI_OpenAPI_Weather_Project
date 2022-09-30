@@ -120,9 +120,15 @@ void callWeatherByLoc()
 	json_object *myJsonObj, *weatherKeyObj, *mainKeyObj;
         json_object *dataObj, *dataValObj;
 
-        int latitude;
-        int longtitude;
+        float latitude = 0;
+        float longtitude = 0;
 
+	int fseekResult = 0;
+
+	long ftellResult = 0;
+	long size = 0;
+
+	size_t freadResult = 0;
 	char latURL[20];
 	char longURL[20];
 
@@ -132,12 +138,12 @@ void callWeatherByLoc()
 
         printf("===================================================\n");
         printf("위도를 입력하세요\n");
-        scanf("%d",&latitude);
+        scanf("%f",&latitude);
 	printf("경도를 입력하세요\n");
-        scanf("%d",&longtitude);
+        scanf("%f",&longtitude);
 
-	sprintf(latURL,"lat=%d",latitude);
-	sprintf(longURL,"lon=%d",longtitude);
+	sprintf(latURL,"lat=%f",latitude);
+	sprintf(longURL,"lon=%f",longtitude);
 
 	printf("check %s %s\n",latURL,longURL);
 
@@ -153,7 +159,7 @@ void callWeatherByLoc()
                 return;
         }
 
-        file = fopen("/home/jwoh/http_Project/CLI_OpenAPI_Weather_Project/src/result.json","w");
+        file = fopen("/home/jwoh/http_Project/CLI_OpenAPI_Weather_Project/src/resultByLoc.json","w");
         if (file == NULL)
         {
                 perror("FILE *file이 NULL입니다.\n");
@@ -161,13 +167,74 @@ void callWeatherByLoc()
         }
         while(fgets(buf,BUF_SIZE,fp))
         {
-                printf("%s\n",buf);
+                //printf("%s\n",buf);
                 fputs(buf,file);
         }
+
         pclose(fp);
         fclose(file);
 
+	FILE *rfp;
+        rfp = fopen("/home/jwoh/http_Project/CLI_OpenAPI_Weather_Project/src/resultByLoc.json","r");
+        if (rfp == NULL)
+        {
+                perror("FILE *rfp가 NULL입니다.\n");
+                return;
+        }
+
+        fseekResult = fseek(rfp,0,SEEK_END);
+        // fseek 함수, 성공 시 파일 위치 반환, 실패시 -1 반환
+        if (fseekResult == -1)
+        {
+                perror("파일 위치 읽기를 실패하였습니다.\n");
+                return;
+        }
+
+	size = ftell(rfp);
+        printf("size: %ld\n",size);
+
+        readBuffer = malloc(size+1);
+        memset(readBuffer,0, size+1);
+
+        fseekResult = fseek(rfp,0,SEEK_SET);
+        if (fseekResult == -1)
+        {
+                perror("파일 위치 읽기를 실패하였습니다.\n");
+                return;
+        }
+
+        freadResult = fread(readBuffer,1,size+1,rfp);
+
+        if (freadResult != size)
+        {
+                printf("freadResult : %ld\n",freadResult);
+                perror("파일을 읽지 못했습니다.\n");
+                return;
+        }
+        myJsonObj = json_tokener_parse(readBuffer);
+        printf("받아온 json data :\n %s\n", json_object_get_string(myJsonObj));
+
+	weatherKeyObj = json_object_object_get(myJsonObj, "weather");
+        printf("1차로 파싱한 weather data :\n %s\n", json_object_get_string(weatherKeyObj));
+
+        mainKeyObj = json_object_object_get(myJsonObj, "main");
+        printf("1차로 파싱한 main data :\n %s\n", json_object_get_string(mainKeyObj));
+
+        // 웨더 영역 파싱
+        dataObj = json_object_array_get_idx(weatherKeyObj,0);
+        printf("웨더 영역의 array 객체 :\n %s\n",json_object_get_string(dataObj));
+
+        dataValObj = json_object_object_get(dataObj, "description");
+        printf("현재 날씨는 :\n %s\n", json_object_get_string(dataValObj));
+
+        // 메인 영역 파싱
+        dataValObj = json_object_object_get(mainKeyObj, "temp");
+        printf("현재기온은 :\n %s\n", json_object_get_string(dataValObj));
+
+        fclose(rfp);
+        free(readBuffer);
 }
+
 void callWeatherByCity()
 {
 	json_object *myJsonObj, *weatherKeyObj, *mainKeyObj;
@@ -196,7 +263,7 @@ void callWeatherByCity()
 		return;
 	}
 
-        file = fopen("/home/jwoh/http_Project/CLI_OpenAPI_Weather_Project/src/result.json","w");
+        file = fopen("/home/jwoh/http_Project/CLI_OpenAPI_Weather_Project/src/resultByCity.json","w");
 	if (file == NULL)
 	{
 		perror("FILE *file이 NULL입니다.\n");
@@ -211,7 +278,7 @@ void callWeatherByCity()
         fclose(file);
 
 	FILE *rfp;
-	rfp = fopen("/home/jwoh/http_Project/CLI_OpenAPI_Weather_Project/src/result.json","r");
+	rfp = fopen("/home/jwoh/http_Project/CLI_OpenAPI_Weather_Project/src/resultByCity.json","r");
 	if (rfp == NULL)
 	{
 		perror("FILE *rfp가 NULL입니다.\n");
@@ -278,3 +345,17 @@ void error_Handling(char *buf)
 	exit(1);
 }
 
+void write_File()
+{
+
+}
+
+void read_File()
+{
+
+}
+
+void parsing_Json()
+{
+
+}
