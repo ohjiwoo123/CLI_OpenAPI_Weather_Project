@@ -104,7 +104,8 @@ JSON 구조는 크게 Object 는 { } 로 구분 key-value 쌍으로 이루어진
     - json_type_array
     - json_type_string
 - 관련 사이트  
-https://linuxprograms.wordpress.com/2010/05/20/json-c-libjson-tutorial/
+https://linuxprograms.wordpress.com/2010/05/20/json-c-libjson-tutorial/  
+https://github.com/json-c/json-c  
 
 ## OpenWeatherMap API 사용법  
 OpenWeatherMap 사이트 회원가입 후 인증키 발급받고 API 공식문서 대로 진행  
